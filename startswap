@@ -1,0 +1,70 @@
+#!/bin/bash
+
+SWAP_FILE=/var/swapfile
+
+
+function err_info()
+{
+    echo -e "[Start-Swap] \033[31mERROR! \033[0m${1}!"
+    echo -e ""
+    if [ ${2} -eq 0 ];
+    then
+    	echo -e "\033[31m*** Exit. Failed to start swap. ***\033[0m"
+    else
+    	echo -e "\033[31m*** Exit. But succeed in starting swap. ***\033[0m"
+    fi
+    exit 1
+}
+
+if [ `id -u` -ne 0 ];
+then
+    err_info "Must run by ROOT user" 0
+fi
+
+if [[ ${1} = "-h" ]] || [[ ${1} = "--help" ]];
+then
+    echo """
+Start Swap
+
+Usage:
+    start-swap [option]
+
+    Options:
+    --help, -h            Show help info.
+    --file, -f <file>     Use <file> as swap file.
+    """
+    exit 0
+elif [[ ${1} = "-f" ]] || [[ ${1} = "--file" ]];
+then
+    if [ -z ${2} ];
+    then
+        err_info "Must give file name" 0
+    fi
+    SWAP_FILE=${2}
+fi
+
+if [ ! -f ${SWAP_FILE} ];
+then
+    err_info " Swap file ${SWAP_FILE} NOT FOUND" 0
+fi
+
+/sbin/swapoff -a
+
+if [ ${?} -ne 0 ];
+then
+    err_info "Cannot off swap file" 0
+fi
+
+/sbin/swapon ${SWAP_FILE}
+
+if [ ${?} -ne 0 ];
+then
+    err_info "Cannot start swap" 0
+fi
+
+free -m
+
+if [ ${?} -ne 0 ];
+then
+	err_info "Cannot show memory" 1
+fi
